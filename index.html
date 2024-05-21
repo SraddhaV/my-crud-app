@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD App</title>
+</head>
+<body>
+    <h1>Simple CRUD Application</h1>
+    <form id="create-form">
+        <input type="text" id="item" placeholder="Enter item" required>
+        <button type="submit">Add Item</button>
+    </form>
+    <ul id="items-list"></ul>
+    <script>
+        const form = document.getElementById('create-form');
+        const itemsList = document.getElementById('items-list');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const item = document.getElementById('item').value;
+            const response = await fetch('/items', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ item }),
+            });
+            const newItem = await response.json();
+            addItemToList(newItem);
+            form.reset();
+        });
+
+        async function loadItems() {
+            const response = await fetch('/items');
+            const items = await response.json();
+            items.forEach((item, index) => {
+                addItemToList(item, index);
+            });
+        }
+
+        function addItemToList(item, index) {
+            const li = document.createElement('li');
+            li.textContent = item.item;
+            li.appendChild(createEditButton(index));
+            li.appendChild(createDeleteButton(index));
+            itemsList.appendChild(li);
+        }
+
+        function createEditButton(index) {
+            const editButton = document.createElement('button');
+            editButton.textContent = 'Edit';
+            editButton.onclick = async () => {
+                const newItem = prompt('Enter new item:', '');
+                if (newItem) {
+                    const response = await fetch(`/items/${index}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ item: newItem }),
+                    });
+                    const updatedItem = await response.json();
+                    loadItems();
+                }
+            };
+            return editButton;
+        }
+
+        function createDeleteButton(index) {
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = async () => {
+                await fetch(`/items/${index}`, {
+                    method: 'DELETE',
+                });
+                loadItems();
+            };
+            return deleteButton;
+        }
+
+        loadItems();
+    </script>
+</body>
+</html>
